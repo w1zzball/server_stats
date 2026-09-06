@@ -1,16 +1,16 @@
 #!/bin/bash
 
-block_rows=()
 filesystems=()
 declare -A fs_size 
 declare -A fs_used
 declare -A fs_avail
 declare -A fs_used_perc
 declare -A fs_mountpoint
-length=30
 
 get_partition_data() { 
   # number of mounted partition
+  local row_number
+  local block_rows=()
   row_number=$( lsblk -ro MOUNTPOINT | grep -c '/')
   for ((i=0;i<$row_number;i++))
   do
