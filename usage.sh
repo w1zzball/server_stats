@@ -9,28 +9,6 @@ declare -A fs_used_perc
 declare -A fs_mountpoint
 length=30
 
-#possible characters █░▒|│
-draw_progress_bar() {
-  local s length perc filled bar empty
-  bar="█";
-  empty="░";
-  s="│";
-  length=$1
-  perc=$2
-  filled=$(($perc*$length/100))
-  for ((i=0;i<$filled;i++))
-  do
-    s+=$bar;
-  done
-
-  for ((i=$filled;i<$length;i++))
-  do
-    s+=$empty;
-  done
-
-  echo "$s│"
-}
-
 get_partition_data() { 
   # number of mounted partition
   row_number=$( lsblk -ro MOUNTPOINT | grep '/'| wc -l)
@@ -86,7 +64,7 @@ write_logs(){
 main(){
   get_partition_data
   for mnt in ${filesystems[@]}; do
-    draw_progress_bar $length ${fs_used_perc[$mnt]:0:-1}
+    ./progress-bar.sh -p ${fs_used_perc[$mnt]:0:-1}
     echo -n " ${fs_mountpoint[$mnt]} " 
     echo -n "║ ${fs_used_perc[$mnt]} used "
     echo -n "║ ${fs_avail[$mnt]} available "
