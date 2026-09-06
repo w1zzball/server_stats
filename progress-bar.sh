@@ -1,60 +1,90 @@
-#!/bin/bash
+#!/bin/env bash
 
-#usage ./progress-bar.sh [length] [amount] [total] | [length ]-p [percent completion]
+LENGTH=30
+PARSED_ARGS=0
+PERCENT_MODE=0
+QUIET=0
 
-displa_help() {
-  local usage
-  read 
+display_help() {
+    local usage
+    read -r -d '' usage <<-EOF
+	usage 
+    ./progress-bar.sh  [amount] [total] 
+    or 
+    ./progress-bar.sh -p [percent completion] 
+
+	display a progress bar
+
+  -l [length] length of bar (number of characters)
+	-p supply a percentage fill instead of an amount
+  -q quiet mode
+
+	EOF
+
+    echo "$usage"
+}
+
+get_args(){
+  while getopts "l:pq" opt; do
+    case ${opt} in
+      l)
+        LENGTH=$OPTARG
+        ;;
+      p)
+        PERCENT_MODE=1
+        ;;
+      q)
+        QUIET=1
+        ;;
+      \?)
+        echo "Invalid option -$OPTARG" >&2
+        display_help
+        exit 1
+        ;;
+      :)
+        echo "Option -$OPTARG requires an argument." >&2
+        display_help
+        exit 1
+    esac
+  done
+  PARSED_ARGS=$((OPTIND - 1))
 }
 
 draw_progress_bar() {
+  local s bar empty prog total perc filled
   bar="█";
   empty="░";
-  # bar="|";
-  # empty=" ";
-  local s length prog total perc filled
-  local s="[";
-  length=$1
-  prog=$2;
-  total=$3;
-  perc=$((prog*100/total))
-  filled=$(($perc*$length/100))
+  s="│";
+  if (( "$PERCENT_MODE" == 1 )); then
+    perc=$1
+  else
+    prog=$1;
+    total=$2;
+    perc=$((prog*100/total))
+  fi
+  filled=$(($perc*$LENGTH/100))
   for ((i=0;i<$filled;i++))
   do
     s+=$bar;
   done
 
-  for ((i=$filled;i<$length;i++))
+  for ((i=$filled;i<$LENGTH;i++))
   do
     s+=$empty;
   done
-
-  echo -en "$s] $perc% ($prog / $total)\033[0K\r"
+  s+="│"
+  if (($QUIET==0)); then
+    s+=" ~ $perc% ($prog / $total)"
+  fi
+  echo "$s"
 }
 
 main(){
+  #parse flags
+  get_args "$@"
+  shift $PARSED_ARGS
   prog=0;
   total=10;
-  length=10
-  if [  $# -eq 0 ]; then
-    length=10;
-  else
-    length=$1;
-  fi
-
-  if [  $# -ge 3 ]; then
-    length=$1;
-    prog=$2;
-    total=$3;
-  elif [ $# -eq 1 ]; then
-    length=$1;
-  fi
-  draw_progress_bar $length $prog $total
-  while [[ $prog -lt $total ]]; do
-    ((prog++));
-    draw_progress_bar $length $prog $total
-    sleep 0.1;
-  done
-
+  draw_progress_bar $@
 }
 main "$@"
