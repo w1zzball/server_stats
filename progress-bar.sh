@@ -3,7 +3,7 @@
 LENGTH=30
 PARSED_ARGS=0
 PERCENT_MODE=0
-QUIET=0
+VERBOSE=0
 
 display_help() {
     local usage
@@ -17,7 +17,7 @@ display_help() {
 
   -l [length] length of bar (number of characters)
 	-p supply a percentage fill instead of an amount
-  -q quiet mode
+  -q verbose mode, prints info
 
 	EOF
 
@@ -25,7 +25,7 @@ display_help() {
 }
 
 get_args(){
-  while getopts "l:pq" opt; do
+  while getopts "l:pv" opt; do
     case ${opt} in
       l)
         LENGTH=$OPTARG
@@ -33,8 +33,8 @@ get_args(){
       p)
         PERCENT_MODE=1
         ;;
-      q)
-        QUIET=1
+      v)
+        VERBOSE=1
         ;;
       \?)
         echo "Invalid option -$OPTARG" >&2
@@ -47,6 +47,7 @@ get_args(){
         exit 1
     esac
   done
+  #shift $@ to account for consumed arguments
   PARSED_ARGS=$((OPTIND - 1))
 }
 
@@ -56,7 +57,9 @@ draw_progress_bar() {
   empty="░";
   s="│";
   if (( "$PERCENT_MODE" == 1 )); then
-    perc=$1
+    perc=$(($1 <= 100 ? $1 : 100))
+    prog=$perc;
+    total=100;
   else
     prog=$1;
     total=$2;
@@ -73,7 +76,7 @@ draw_progress_bar() {
     s+=$empty;
   done
   s+="│"
-  if (($QUIET==0)); then
+  if (($VERBOSE==1)); then
     s+=" ~ $perc% ($prog / $total)"
   fi
   echo "$s"
