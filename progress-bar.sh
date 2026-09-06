@@ -8,7 +8,7 @@ VERBOSE=0
 display_help() {
     local usage
     read -r -d '' usage <<-EOF
-	usage 
+  usage (USE INTEGERS) 
     ./progress-bar.sh  [amount] [total] 
     or 
     ./progress-bar.sh -p [percent completion] 
@@ -86,8 +86,6 @@ main(){
   #parse flags
   get_args "$@"
   shift $PARSED_ARGS
-  prog=0;
-  total=10;
   draw_progress_bar $@
 }
 main "$@"
