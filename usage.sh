@@ -65,6 +65,15 @@ write_obj_data(){
 }
 
 write_logs(){
+  # create log directory and file if they don't exist
+  if ! [[ -d ./logs/ ]] then
+    echo "creating log dir"
+    mkdir logs
+  fi
+  if ! [[ -e ./logs/drives.log ]] then
+    echo "creating drive log"
+    touch ./logs/drives.log
+  fi
   write_obj_data >> ./logs/drives.log
   echo >> ./logs/drives.log 
 }
