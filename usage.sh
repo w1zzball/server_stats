@@ -7,6 +7,18 @@ declare -A fs_avail
 declare -A fs_used_perc
 declare -A fs_mountpoint
 
+# mode for sending serialized data to stdout
+OBJECT_MODE=0
+
+get_args(){
+  local opt OPTARG
+  while getopts "o" opt; do
+    case ${opt} in
+      o) OBJECT_MODE=1;;
+    esac
+  done
+}
+
 get_partition_data() { 
   # number of mounted partition
   local row_number
@@ -31,18 +43,10 @@ get_partition_data() {
   done
 }
 
-write_logs(){
+write_obj_data(){
   local timestamp s
   s=""
   timestamp=$(date)
-  if ! [[ -d ./logs/ ]] then
-    echo "creating log dir"
-    mkdir logs
-  fi
-  if ! [[ -e ./logs/drives.log ]] then
-    echo "creating drive log"
-    touch ./logs/drives.log
-  fi
   #check drive arrays populated
   if [[ ${#filesystems[@]} -le 0 ]] then
     echo "no drive data" >&2
@@ -57,19 +61,29 @@ write_logs(){
     s+="used_perc:${fs_used_perc[$mnt]},"
     s+="mountpoint:${fs_mountpoint[$mnt]}}"
   done
-  echo $s >> ./logs/drives.log
+  echo $s
+}
+
+write_logs(){
+  write_obj_data >> ./logs/drives.log
   echo >> ./logs/drives.log 
 }
 
 main(){
+  get_args "$@"
   get_partition_data
-  for mnt in ${filesystems[@]}; do
-    ./progress-bar.sh -p ${fs_used_perc[$mnt]:0:-1}
-    echo -n " ${fs_mountpoint[$mnt]} " 
-    echo -n "║ ${fs_used_perc[$mnt]} used "
-    echo -n "║ ${fs_avail[$mnt]} available "
-    echo  "║ ${fs_used[$mnt]} used / ${fs_size[$mnt]} total"
-  done
+  if (( "$OBJECT_MODE" == 1)); then
+    write_obj_data
+  else
+    for mnt in ${filesystems[@]}; do
+      ./progress-bar.sh -p ${fs_used_perc[$mnt]:0:-1}
+      echo -n " ${fs_mountpoint[$mnt]} " 
+      echo -n "║ ${fs_used_perc[$mnt]} used "
+      echo -n "║ ${fs_avail[$mnt]} available "
+      echo  "║ ${fs_used[$mnt]} used / ${fs_size[$mnt]} total"
+    done
+  fi
+
   write_logs
 }
 
